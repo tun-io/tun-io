@@ -1,0 +1,32 @@
+# Stage 1: Build
+FROM golang:1.20 as builder
+
+# Set the working directory inside the container
+WORKDIR /app
+
+# Copy go.mod and go.sum files
+COPY go.mod go.sum ./
+
+# Download dependencies
+RUN go mod download
+
+# Copy the entire project
+COPY . .
+
+# Build the application
+RUN go build -o tunio cmd/tunio/tunio.go
+
+# Stage 2: Runtime
+FROM alpine:latest
+
+# Set the working directory inside the container
+WORKDIR /root/
+
+# Copy the built binary from the builder stage
+COPY --from=builder tunio .
+
+# Expose the port the application listens on (if applicable)
+EXPOSE 8080
+
+# Command to run the application
+CMD ["./tunio server start"]
