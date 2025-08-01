@@ -14,19 +14,19 @@ RUN go mod download
 COPY . .
 
 # Build the application
-RUN go build -o tunio cmd/tunio/tunio.go
+RUN go build -o /app/tunio cmd/tunio/tunio.go
 
 # Verify the binary exists
-RUN test -f tunio
+RUN test -f /app/tunio
 
 # Stage 2: Runtime
-FROM alpine:latest
+FROM debian:12
 
 # Set the working directory inside the container
 WORKDIR /root/
 
 # Copy the built binary from the builder stage
-COPY --from=builder /app/tunio .
+COPY --from=builder /app/tunio /root/tunio
 
 # Expose the port the application listens on (if applicable)
 EXPOSE 8080
