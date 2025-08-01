@@ -1,6 +1,6 @@
 module github.com/tun-io/tun-io
 
-go 1.23
+go 1.23.0
 
 toolchain go1.23.11
 
