@@ -2,6 +2,7 @@ package client
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"github.com/gorilla/websocket"
 	"github.com/tun-io/tun-io/internal/http/Helpers"
@@ -60,11 +61,13 @@ func httpRequest(c *websocket.Conn, command pkg.Command) {
 		}
 	}
 
+	var encodedBody = base64.StdEncoding.EncodeToString(body)
+
 	// Prepare the response payload
 	responsePayload := pkg.HttpResponsePayload{
 		StatusCode: resp.StatusCode,
 		Headers:    Helpers.HeadersToMap(resp.Header),
-		Body:       string(body),
+		Body:       encodedBody,
 	}
 
 	var responseCommand = pkg.Command{

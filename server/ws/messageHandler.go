@@ -1,6 +1,7 @@
 package ws
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"github.com/charmbracelet/log"
 	"github.com/gorilla/websocket"
@@ -47,8 +48,14 @@ func httpResponse(c *websocket.Conn, command pkg.Command) {
 
 	responseWriter.WriteHeader(payload.StatusCode)
 
+	// base64 decode the body if it starts with "base64:"
+	decodedBytes, err := base64.StdEncoding.DecodeString(payload.Body)
+	if err != nil {
+		log.Warnf("Error decoding base64 body for event ID %v: %v", command.EventId, err.Error())
+	}
+
 	if payload.Body != "" {
-		_, err = responseWriter.Write([]byte(payload.Body))
+		_, err = responseWriter.Write(decodedBytes)
 		if err != nil {
 			log.Errorf("Error writing response body for event ID %v: %v", command.EventId, err.Error())
 			return
