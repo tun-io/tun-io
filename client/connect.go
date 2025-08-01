@@ -3,20 +3,30 @@ package client
 import (
 	"github.com/gorilla/websocket"
 	"net/url"
-	"strconv"
 )
 
-func Connect() {
-	var domain = "a.tunio.test"
-	var port = 8080
-	var target = domain + ":" + strconv.Itoa(port)
+func createConnection() *websocket.Conn {
 
-	println("Connecting to target:", target)
+	scheme := "ws"
+	if isSecure {
+		scheme = "wss"
+	}
 
-	u := url.URL{Scheme: "ws", Host: target, Path: "/_tunio/_internal/api/client/ws"}
+	u := url.URL{Scheme: scheme, Host: remoteDomain, Path: "/_tunio/_internal/api/client/ws"}
 	conn, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
 	if err != nil {
 		println("Failed to connect to server:", err.Error())
+		return nil
+	}
+
+	println("Connected to server:", u.String())
+	return conn
+}
+
+func Connect() {
+	connection := createConnection()
+	if connection == nil {
+		println("Exiting client due to connection failure.")
 		return
 	}
 
@@ -27,9 +37,9 @@ func Connect() {
 		} else {
 			println("Connection closed successfully")
 		}
-	}(conn)
+	}(connection)
 
-	println("Connected to server:", u.String())
-	messageHandler(conn)
+	println("Connected to server:", connection.RemoteAddr().String())
+	messageHandler(connection)
 	println("Connection closed, exiting client.")
 }

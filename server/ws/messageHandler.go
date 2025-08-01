@@ -44,11 +44,8 @@ func httpResponse(c *websocket.Conn, command pkg.Command) {
 		responseWriter.Header().Set(key, value)
 	}
 
-	responseWriter.Header().Set("Content-Length", strconv.Itoa(len(payload.Body)))
-
 	responseWriter.WriteHeader(payload.StatusCode)
 
-	// base64 decode the body if it starts with "base64:"
 	decodedBytes, err := base64.StdEncoding.DecodeString(payload.Body)
 	if err != nil {
 		log.Warnf("Error decoding base64 body for event ID %v: %v", command.EventId, err.Error())

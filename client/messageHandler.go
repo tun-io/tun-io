@@ -2,15 +2,63 @@ package client
 
 import (
 	"bytes"
+	"compress/gzip"
 	"encoding/base64"
 	"encoding/json"
 	"github.com/gorilla/websocket"
 	"github.com/tun-io/tun-io/internal/http/Helpers"
+	"github.com/tun-io/tun-io/internal/http/headers"
 	"github.com/tun-io/tun-io/pkg"
 	"io"
 	"net/http"
 	"strings"
 )
+
+func replaceBodyDomain(body []byte, resp *http.Response) []byte {
+	if len(body) <= 0 {
+		return body
+	}
+
+	contentEncoding := resp.Header.Get("Content-Encoding")
+	var isGzip = false
+	if contentEncoding == "gzip" {
+		isGzip = true
+		gzipReader, err := gzip.NewReader(bytes.NewReader(body))
+		if err != nil {
+			println("Error creating gzip reader:", err.Error())
+			return body
+		}
+		defer gzipReader.Close()
+
+		body, err = io.ReadAll(gzipReader)
+		if err != nil {
+			println("Error reading gzip response body:", err.Error())
+			return body
+		}
+	}
+
+	body = bytes.ReplaceAll(body, []byte(localDomain), []byte(remoteDomain))
+
+	if !isGzip {
+		return body
+	}
+
+	var buffer bytes.Buffer
+	gzipWriter := gzip.NewWriter(&buffer)
+	_, err := gzipWriter.Write(body)
+	if err != nil {
+		println("Error writing gzip response body:", err.Error())
+		return body
+	}
+
+	err = gzipWriter.Close()
+	if err != nil {
+		println("Error closing gzip writer:", err.Error())
+		return body
+	}
+
+	return buffer.Bytes()
+}
 
 func httpRequest(c *websocket.Conn, command pkg.Command) {
 	var payload, err = command.GetHttpRequestPayload()
@@ -24,13 +72,12 @@ func httpRequest(c *websocket.Conn, command pkg.Command) {
 		return
 	}
 
-	// replace payload.Url the original host to localhost:8000
 	if payload.Url == "" {
 		println("Received command with empty URL")
 		return
 	}
 
-	payload.Url = strings.ReplaceAll(payload.Url, "a.tunio.test", "localhost:8000")
+	payload.Url = strings.ReplaceAll(payload.Url, remoteDomain, localDomain)
 
 	println("Received HTTP request command:", payload.Url, payload.Method)
 	// Create a new HTTP request
@@ -42,6 +89,9 @@ func httpRequest(c *websocket.Conn, command pkg.Command) {
 
 	// Set headers if provided
 	for key, value := range payload.Headers {
+		if headers.IsDisallowedHeader(key) {
+			continue
+		}
 		req.Header.Set(key, value)
 	}
 
@@ -60,6 +110,8 @@ func httpRequest(c *websocket.Conn, command pkg.Command) {
 			return
 		}
 	}
+
+	body = replaceBodyDomain(body, resp)
 
 	var encodedBody = base64.StdEncoding.EncodeToString(body)
 
