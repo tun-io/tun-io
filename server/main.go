@@ -3,7 +3,9 @@ package server
 import (
 	"github.com/charmbracelet/log"
 	_ "github.com/gorilla/websocket"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/tun-io/tun-io/internal/http/Helpers"
+	"github.com/tun-io/tun-io/server/metrics"
 	"github.com/tun-io/tun-io/server/ws"
 	"net/http"
 	"strconv"
@@ -14,6 +16,7 @@ func StartServer() {
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/_tunio/_internal/api/client/ws", ws.WsUpgradeRoute)
+	mux.Handle("/_tunio/_internal/api/server/metrics", promhttp.Handler())
 
 	// create a subdomain handler
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -34,6 +37,7 @@ func StartServer() {
 			return
 		}
 
+		metrics.NewSubdomainRequest(subdomain)
 		ws.SendTunnelRequest(subdomain, r, w)
 	})
 
