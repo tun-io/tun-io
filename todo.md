@@ -9,8 +9,8 @@ using: `github.com/charmbracelet/bubbletea` `github.com/NimbleMarkets/ntcharts` 
 ## Server
 - [ ] Implement authentication middleware
 - [ ] Implement authentication database (gorm or bun)
-- [ ] Implement prometheus metrics
-- [ ] Implement actual logging
+- [x] Implement prometheus metrics
+- [x] Implement actual logging
 
 ## Readme:
 - [ ] Use VHS to record a demo of the client and server in action.
