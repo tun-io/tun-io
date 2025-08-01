@@ -2,15 +2,20 @@ name: Create and publish the docker image for the server
 
 on:
   push:
-    branches: ['main']
+    tags:
+      - 'v*'
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
-  IMAGE_FILE: build/Dockerfile-server
+  SERVER_IMAGE_NAME: ${{ github.repository }}-server
+  SERVER_IMAGE_FILE: build/Dockerfile-server
+  #TODO: Create the actual image :)
+  CLIENT_IMAGE_NAME: ${{ github.repository }}-client
+  CLIENT_IMAGE_FILE: build/Dockerfile-client
 
 jobs:
-  build-and-push-image:
+  build-and-push-server-image:
+    name: "Build and Push Server Docker Image"
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -30,13 +35,13 @@ jobs:
         id: meta
         uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          images: ${{ env.REGISTRY }}/${{ env.SERVER_IMAGE_NAME }}
       - name: Build and push Docker image
         id: push
         uses: docker/build-push-action@f2a1d5e99d037542a71f64918e516c093c6f3fc4
         with:
           context: .
-          file: ${{ env.IMAGE_FILE }}
+          file: ${{ env.SERVER_IMAGE_FILE }}
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
@@ -44,6 +49,6 @@ jobs:
       - name: Generate artifact attestation
         uses: actions/attest-build-provenance@v2
         with:
-          subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME}}
+          subject-name: ${{ env.REGISTRY }}/${{ env.SERVER_IMAGE_NAME}}
           subject-digest: ${{ steps.push.outputs.digest }}
           push-to-registry: true
