@@ -5,6 +5,7 @@ go 1.23.0
 toolchain go1.23.11
 
 require (
+	github.com/cenkalti/backoff/v4 v4.3.0
 	github.com/charmbracelet/log v0.4.2
 	github.com/gorilla/websocket v1.5.3
 	github.com/prometheus/client_golang v1.23.0
