@@ -14,6 +14,8 @@ import (
 	"strings"
 )
 
+var runningRequests = make(map[int64]bool)
+
 func replaceBodyDomain(body []byte, resp *http.Response) []byte {
 	if len(body) <= 0 {
 		return body
@@ -61,6 +63,18 @@ func replaceBodyDomain(body []byte, resp *http.Response) []byte {
 }
 
 func httpRequest(c *websocket.Conn, command pkg.Command) {
+
+	if _, exists := runningRequests[command.EventId]; exists {
+		println("[httpRequest] Command already running:", command.EventId)
+		return
+	}
+
+	runningRequests[command.EventId] = true
+	defer func() {
+		delete(runningRequests, command.EventId)
+		println("Removed event:", command.EventId)
+	}()
+
 	var payload, err = command.GetHttpRequestPayload()
 	if err != nil {
 		println("Error getting HTTP request payload:", err.Error())
@@ -131,6 +145,8 @@ func httpRequest(c *websocket.Conn, command pkg.Command) {
 	}
 
 	c.WriteJSON(responseCommand)
+
+	delete(runningRequests, command.EventId)
 }
 
 func messageHandler(c *websocket.Conn) {

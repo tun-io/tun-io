@@ -60,14 +60,19 @@ func SendTunnelRequest(subdomain string, r *http.Request, w http.ResponseWriter)
 		Response: w,
 	}
 
-	// keep the connection alive (TODO: implement a proper keep-alive mechanism)
+	// actually wait for the response / keep sending the request as maybe the client just restarted/disconnected (temporarily)
 	var i int = 0
 	for {
-		if i > 1000 {
-			break
-		}
+
+		time.Sleep(1 * time.Second)
+		_ = conn.WriteJSON(command)
 		i++
-		time.Sleep(100 * time.Millisecond)
+		if i > 30 {
+			http.Error(w, "Request timed out", http.StatusGatewayTimeout)
+			delete(PendingRequests, strconv.FormatInt(eventId, 10))
+			return
+		}
+
 		if _, exists := PendingRequests[strconv.FormatInt(eventId, 10)]; !exists {
 			break
 		}

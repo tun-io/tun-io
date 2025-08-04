@@ -23,7 +23,5 @@ using: `github.com/charmbracelet/bubbletea` `github.com/NimbleMarkets/ntcharts` 
 - [ ] Implement a docker-compose file to run both the server, database and maybe a prometheus/grafana stack.
 
 # REQUIRED
-- [ ] Implement https support
-- [ ] Allow sending errors respones via HTTP/WS to the server to make sure the requester errors out correctly
-- [ ] Handle websockets possibly crashing
-- [ ] Allow the server to gracefully time out / retry packets after X amount of time.
+- [x] Handle websockets possibly crashing (reconnects now, yay)
+- [x] Allow the server to gracefully time out / retry packets after X amount of time. (it just keeps sending it until it gets a response/ it times out)
