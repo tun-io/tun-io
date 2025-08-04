@@ -3,6 +3,7 @@ package client
 import (
 	"github.com/cenkalti/backoff/v4"
 	"github.com/gorilla/websocket"
+	"github.com/tun-io/tun-io/internal/http/Helpers"
 	"net/url"
 	"time"
 )
@@ -13,7 +14,7 @@ func createConnection() *websocket.Conn {
 		scheme = "wss"
 	}
 
-	u := url.URL{Scheme: scheme, Host: remoteDomain, Path: "/_tunio/_internal/api/client/ws"}
+	u := url.URL{Scheme: scheme, Host: Helpers.NormaliseUrl(remoteDomain), Path: "/_tunio/_internal/api/client/ws"}
 	var conn *websocket.Conn
 	var err error
 	operation := func() error {

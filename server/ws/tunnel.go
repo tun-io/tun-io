@@ -7,10 +7,12 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
 var PendingRequests map[string]pkg.PendingHttpRequest = make(map[string]pkg.PendingHttpRequest)
+var PendingRequestsMutex = &sync.Mutex{}
 
 func randBetween(min int, max int) int64 {
 	return int64(min + rand.Intn(max-min))
@@ -54,11 +56,13 @@ func SendTunnelRequest(subdomain string, r *http.Request, w http.ResponseWriter)
 		return
 	}
 
+	PendingRequestsMutex.Lock()
 	PendingRequests[strconv.FormatInt(eventId, 10)] = pkg.PendingHttpRequest{
 		EventId:  eventId,
 		Request:  r,
 		Response: w,
 	}
+	PendingRequestsMutex.Unlock()
 
 	// actually wait for the response / keep sending the request as maybe the client just restarted/disconnected (temporarily)
 	var i int = 0

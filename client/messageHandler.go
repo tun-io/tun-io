@@ -5,6 +5,7 @@ import (
 	"compress/gzip"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"github.com/gorilla/websocket"
 	"github.com/tun-io/tun-io/internal/http/Helpers"
 	"github.com/tun-io/tun-io/internal/http/headers"
@@ -39,7 +40,9 @@ func replaceBodyDomain(body []byte, resp *http.Response) []byte {
 		}
 	}
 
-	body = bytes.ReplaceAll(body, []byte(localDomain), []byte(remoteDomain))
+	fmt.Printf("[replaceBodyDomain] Replacing domain in response body from %s to %s\n", remoteDomain, localDomain)
+
+	body = bytes.ReplaceAll(body, []byte(Helpers.NormaliseUrl(localDomain)), []byte(Helpers.NormaliseUrl(remoteDomain)))
 
 	if !isGzip {
 		return body
@@ -90,12 +93,11 @@ func httpRequest(c *websocket.Conn, command pkg.Command) {
 		println("Received command with empty URL")
 		return
 	}
+	var targetUrl = strings.ReplaceAll(payload.Url, remoteDomain, localDomain)
 
-	payload.Url = strings.ReplaceAll(payload.Url, remoteDomain, localDomain)
-
-	println("Received HTTP request command:", payload.Url, payload.Method)
+	println("Received HTTP request command:", targetUrl, payload.Method)
 	// Create a new HTTP request
-	req, err := http.NewRequest(payload.Method, payload.Url, bytes.NewBuffer([]byte(payload.Body)))
+	req, err := http.NewRequest(payload.Method, targetUrl, bytes.NewBuffer([]byte(payload.Body)))
 	if err != nil {
 		println("Error creating HTTP request:", err.Error())
 		return

@@ -4,13 +4,14 @@ import (
 	"github.com/charmbracelet/log"
 	"github.com/gorilla/websocket"
 	"github.com/tun-io/tun-io/internal/http/Helpers"
+	"github.com/tun-io/tun-io/pkg"
 	"net/http"
 )
 
 var upgrader = websocket.Upgrader{} // use default options
 
 // Connections key: string subdomain, value: *websocket.Conn
-var Connections = map[string]*websocket.Conn{}
+var Connections = map[string]*pkg.SyncSafeSocket{}
 
 func WsUpgradeRoute(w http.ResponseWriter, r *http.Request) {
 	subdomain := Helpers.GetSubdomain(r)
@@ -42,7 +43,7 @@ func WsUpgradeRoute(w http.ResponseWriter, r *http.Request) {
 	}(c, subdomain)
 
 	log.Infof("New connection established for subdomain: %s (requester: %s)", subdomain, r.RemoteAddr)
-	Connections[subdomain] = c
-	
+	Connections[subdomain] = pkg.NewSyncSafeSocket(c)
+
 	messageHandler(c)
 }
